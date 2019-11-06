@@ -1,0 +1,52 @@
+version: '3.3'
+services:
+   influxdb:
+     image: influxdb:latest
+     ports:
+       - "8086:8086"
+       - "8082:8082"
+     environment:
+       - INFLUXDB_ADMIN_USER=admin
+       - INFLUXDB_ADMIN_PASSWORD=admin
+       - INFLUXDB_USER=user
+       - INFLUXDB_USER_PASSWORD=user
+       - INFLUXDB_DB=dbtest
+       - INFLUXDB_HTTP_ENABLED=true
+       - INFLUXDB_HTTP_AUTH_ENABLED=true
+     networks:
+       - monitoring
+     restart: always
+   mosquito:
+     image: eclipse-mosquitto:latest
+     ports:
+       - '1883:1883'
+       - '9001:9001'
+     depends_on:
+       - influxdb
+       - grafana
+     networks:
+       - monitoring
+   grafana:
+     depends_on:
+       - influxdb
+     networks:
+       - monitoring
+     image: grafana/grafana:latest
+     ports:
+       - "3000:3000"
+     restart: always
+   flask:
+     depends_on:
+       - influxdb
+       - grafana
+       - chronograf
+     build: .
+     ports:
+       - "5000:5000"
+       - "8889:8889" 
+       - "8888:8888"
+     networks:
+       - monitoring
+     restart: always
+networks:
+  monitoring:
